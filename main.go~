@@ -1,0 +1,52 @@
+package main
+
+import (
+ "html/template"
+   "fmt"
+   "net/http"
+)
+
+func handler(w http.ResponseWriter, r *http.Request) {
+    t, _ := template.ParseFiles("home.html")
+        t.Execute(w, nil)
+}
+
+func login(w http.ResponseWriter, r *http.Request) {
+   
+    // Redis connection
+    conn, err := redis.Dial("tcp", ":9090")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer conn.Close()
+
+    // Set UserName
+    if _, err = conn.Do("SET", "UserName", "Prashant"); err != nil {
+        log.Fatal(err)
+    }
+
+    //Set Password
+    if _, err = conn.Do("SET", "k2", "b"); err != nil {
+        log.Fatal(err)
+    }
+
+
+     fmt.Println("method:", r.Method) //get request method
+    if r.Method == "GET" {
+        t, _ := template.ParseFiles("login.html")
+        t.Execute(w, nil)
+    } else {
+        r.ParseForm()
+        // logic part of log in
+        fmt.Println("username:", r.Form["username"])
+        fmt.Println("password:", r.Form["password"])
+        s, _ := template.ParseFiles("home.html")
+        s.Execute(w, nil)
+    }
+}
+
+func main() {
+    http.HandleFunc("/", handler)
+    http.HandleFunc("/login",login)
+    http.ListenAndServe(":8080", nil)
+}
